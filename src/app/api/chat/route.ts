@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { chatWithAgent } from '../../lib/gradient'
+import { chatWithAgent } from '../../../lib/gradient'
 
 export async function POST(req: NextRequest) {
   const { agentUuid, message, conversationUuid } = await req.json()
