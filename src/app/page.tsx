@@ -23,7 +23,6 @@ export default function Home() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setAgentUuid(data.agentUuid)
-      // Wait 3s for indexing to start, then show chat
       await new Promise(r => setTimeout(r, 3000))
       setStep('ready')
     } catch (err: any) {
@@ -34,78 +33,56 @@ export default function Home() {
     }
   }
 
-  if (step === 'ready') {
-    return <Chat agentUuid={agentUuid} businessName={form.businessName} />
-  }
+  if (step === 'ready') return <Chat agentUuid={agentUuid} businessName={form.businessName} />
+
+  const bars = [40,70,90,60,100,75,50,85,65]
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{
-      background: 'radial-gradient(ellipse 80% 60% at 50% 40%, #6c63ff10 0%, transparent 60%), #0a0f1e'
-    }}>
-      {/* Logo */}
-      <div className="mb-2 text-center">
-        <div className="font-['Bebas_Neue'] text-8xl tracking-widest select-none">
-          <span style={{ color: '#6c63ff' }}>A</span>
-          <span className="text-white">RI</span>
-          <span style={{ color: '#6c63ff' }}>A</span>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 24px', background:'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(108,99,255,0.08) 0%, transparent 60%), #0a0f1e' }}>
+      <div style={{ marginBottom:8, textAlign:'center' }}>
+        <div style={{ fontFamily:'Georgia,serif', fontSize:96, letterSpacing:8, lineHeight:1, userSelect:'none' }}>
+          <span style={{ color:'#6c63ff' }}>A</span>
+          <span style={{ color:'#fff' }}>RI</span>
+          <span style={{ color:'#6c63ff' }}>A</span>
         </div>
-        <p className="text-xs tracking-[6px] text-white/20 uppercase mt-1">AI Receptionist · Always On</p>
+        <p style={{ fontSize:11, letterSpacing:6, color:'rgba(255,255,255,0.2)', textTransform:'uppercase', marginTop:4 }}>AI Receptionist · Always On</p>
       </div>
 
-      <p className="text-white/50 text-center mb-10 max-w-md leading-relaxed">
-        Paste your website URL. ARIA learns your business in <span className="text-white/80 font-medium">60 seconds</span> and handles every customer inquiry 24/7.
+      <p style={{ color:'rgba(255,255,255,0.5)', textAlign:'center', marginBottom:40, maxWidth:420, lineHeight:1.6 }}>
+        Paste your website URL. ARIA learns your business in <strong style={{ color:'rgba(255,255,255,0.8)' }}>60 seconds</strong> and handles every customer inquiry 24/7.
       </p>
 
       {step === 'land' && (
-        <form onSubmit={handleOnboard} className="w-full max-w-md space-y-4">
+        <form onSubmit={handleOnboard} style={{ width:'100%', maxWidth:420, display:'flex', flexDirection:'column', gap:16 }}>
           <div>
-            <label className="block text-xs tracking-widest text-white/30 uppercase mb-2">Business Name</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. DontBugMe Pest Control"
-              value={form.businessName}
+            <label style={{ display:'block', fontSize:11, letterSpacing:4, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', marginBottom:8 }}>Business Name</label>
+            <input type="text" required placeholder="e.g. DontBugMe Pest Control" value={form.businessName}
               onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition"
-            />
+              style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'12px 16px', color:'#fff', fontSize:15, outline:'none', boxSizing:'border-box' }} />
           </div>
           <div>
-            <label className="block text-xs tracking-widest text-white/30 uppercase mb-2">Website URL</label>
-            <input
-              type="url"
-              required
-              placeholder="https://yourbusiness.com"
-              value={form.url}
+            <label style={{ display:'block', fontSize:11, letterSpacing:4, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', marginBottom:8 }}>Website URL</label>
+            <input type="url" required placeholder="https://yourbusiness.com" value={form.url}
               onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition"
-            />
+              style={{ width:'100%', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'12px 16px', color:'#fff', fontSize:15, outline:'none', boxSizing:'border-box' }} />
           </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            type="submit"
-            className="w-full py-3 rounded-lg font-semibold text-white transition-all"
-            style={{ background: 'linear-gradient(135deg, #6c63ff, #00d9ff)' }}
-          >
+          {error && <p style={{ color:'#ff6b6b', fontSize:14 }}>{error}</p>}
+          <button type="submit" style={{ padding:'14px', borderRadius:8, border:'none', background:'linear-gradient(135deg,#6c63ff,#00d9ff)', color:'#fff', fontSize:15, fontWeight:600, cursor:'pointer' }}>
             Train ARIA on My Website →
           </button>
-          <p className="text-center text-xs text-white/20">Powered by DigitalOcean Gradient™</p>
+          <p style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,0.2)' }}>Powered by DigitalOcean Gradient™</p>
         </form>
       )}
 
       {step === 'onboarding' && (
-        <div className="text-center space-y-4">
-          <div className="flex justify-center gap-1 items-end h-12">
-            {[40,70,90,60,100,75,50,85,65].map((h, i) => (
-              <div key={i} className="w-2 rounded-full animate-pulse"
-                style={{
-                  height: `${h}%`,
-                  background: 'linear-gradient(to top, #6c63ff, #00d9ff)',
-                  animationDelay: `${i * 100}ms`
-                }} />
+        <div style={{ textAlign:'center' }}>
+          <div style={{ display:'flex', justifyContent:'center', gap:6, alignItems:'flex-end', height:48, marginBottom:16 }}>
+            {bars.map((h, i) => (
+              <div key={i} style={{ width:8, borderRadius:4, height:`${h}%`, background:'linear-gradient(to top,#6c63ff,#00d9ff)', opacity:0.85 }} />
             ))}
           </div>
-          <p className="text-white/60">ARIA is learning <span className="text-white font-medium">{form.businessName}</span>...</p>
-          <p className="text-white/30 text-sm">Crawling your website and building knowledge base</p>
+          <p style={{ color:'rgba(255,255,255,0.6)' }}>ARIA is learning <strong style={{ color:'#fff' }}>{form.businessName}</strong>...</p>
+          <p style={{ color:'rgba(255,255,255,0.3)', fontSize:14, marginTop:8 }}>Crawling website and building knowledge base</p>
         </div>
       )}
     </div>

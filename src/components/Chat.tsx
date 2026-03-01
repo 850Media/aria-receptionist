@@ -38,74 +38,54 @@ export default function Chat({ agentUuid, businessName }: { agentUuid: string; b
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{
-      background: 'radial-gradient(ellipse 60% 40% at 50% 0%, #6c63ff08 0%, transparent 60%), #0a0f1e'
-    }}>
-      {/* Header */}
-      <div className="border-b border-white/5 px-6 py-4 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-          style={{ background: 'linear-gradient(135deg, #6c63ff, #00d9ff)' }}>A</div>
+    <div style={{ minHeight:'100vh', display:'flex', flexDirection:'column', background:'#0a0f1e' }}>
+      <div style={{ borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'16px 24px', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#6c63ff,#00d9ff)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, fontSize:16, color:'#fff' }}>A</div>
         <div>
-          <div className="font-semibold text-sm text-white">ARIA</div>
-          <div className="text-xs text-white/30">{businessName} · AI Receptionist</div>
+          <div style={{ fontWeight:600, fontSize:14, color:'#fff' }}>ARIA</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.3)' }}>{businessName} · AI Receptionist</div>
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-xs text-white/30">Online</span>
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:6 }}>
+          <div style={{ width:8, height:8, borderRadius:'50%', background:'#4ade80' }} />
+          <span style={{ fontSize:12, color:'rgba(255,255,255,0.3)' }}>Online</span>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4 max-w-2xl w-full mx-auto">
+      <div style={{ flex:1, overflowY:'auto', padding:'24px', display:'flex', flexDirection:'column', gap:16, maxWidth:640, width:'100%', margin:'0 auto' }}>
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-sm rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-              m.role === 'user'
-                ? 'text-white rounded-br-sm'
-                : 'text-white/80 border border-white/8 rounded-bl-sm'
-            }`} style={m.role === 'user'
-              ? { background: 'linear-gradient(135deg, #6c63ff, #4f46e5)' }
-              : { background: 'rgba(255,255,255,0.04)' }
-            }>
+          <div key={i} style={{ display:'flex', justifyContent: m.role==='user' ? 'flex-end' : 'flex-start' }}>
+            <div style={{
+              maxWidth:'75%', borderRadius:16, padding:'12px 16px', fontSize:14, lineHeight:1.6,
+              borderBottomRightRadius: m.role==='user' ? 4 : 16,
+              borderBottomLeftRadius: m.role==='aria' ? 4 : 16,
+              background: m.role==='user' ? 'linear-gradient(135deg,#6c63ff,#4f46e5)' : 'rgba(255,255,255,0.05)',
+              border: m.role==='aria' ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              color: m.role==='user' ? '#fff' : 'rgba(255,255,255,0.8)',
+            }}>
               {m.text}
             </div>
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-sm px-4 py-3 border border-white/8" style={{ background: 'rgba(255,255,255,0.04)' }}>
-              <div className="flex gap-1 items-center h-4">
-                {[0,1,2].map(i => (
-                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30 animate-bounce"
-                    style={{ animationDelay: `${i * 150}ms` }} />
-                ))}
-              </div>
+          <div style={{ display:'flex', justifyContent:'flex-start' }}>
+            <div style={{ borderRadius:16, borderBottomLeftRadius:4, padding:'12px 16px', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', display:'flex', gap:4, alignItems:'center' }}>
+              {[0,1,2].map(i => <div key={i} style={{ width:6, height:6, borderRadius:'50%', background:'rgba(255,255,255,0.3)' }} />)}
             </div>
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-white/5 px-6 py-4">
-        <form onSubmit={send} className="max-w-2xl mx-auto flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Ask ARIA anything..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/40 text-sm transition"
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="px-5 py-3 rounded-xl text-white font-medium text-sm disabled:opacity-30 transition"
-            style={{ background: 'linear-gradient(135deg, #6c63ff, #00d9ff)' }}
-          >
+      <div style={{ borderTop:'1px solid rgba(255,255,255,0.06)', padding:'16px 24px' }}>
+        <form onSubmit={send} style={{ maxWidth:640, margin:'0 auto', display:'flex', gap:12 }}>
+          <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="Ask ARIA anything..."
+            style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:'12px 16px', color:'#fff', fontSize:14, outline:'none' }} />
+          <button type="submit" disabled={loading || !input.trim()}
+            style={{ padding:'12px 20px', borderRadius:12, border:'none', background:'linear-gradient(135deg,#6c63ff,#00d9ff)', color:'#fff', fontWeight:600, fontSize:14, cursor:'pointer', opacity: (loading||!input.trim()) ? 0.4 : 1 }}>
             Send
           </button>
         </form>
-        <p className="text-center text-xs text-white/15 mt-3">Powered by DigitalOcean Gradient™ · FieldMatrix.ai</p>
+        <p style={{ textAlign:'center', fontSize:11, color:'rgba(255,255,255,0.15)', marginTop:12 }}>Powered by DigitalOcean Gradient™ · FieldMatrix.ai</p>
       </div>
     </div>
   )
