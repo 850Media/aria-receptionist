@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createKnowledgeBase, createAgent } from '@/lib/gradient'
+import { createKnowledgeBase, createAgent } from '../../../lib/gradient'
 
 export async function POST(req: NextRequest) {
   const { url, businessName } = await req.json()
