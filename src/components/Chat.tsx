@@ -30,7 +30,8 @@ export default function Chat({ kbUuid, businessName }: { kbUuid: string; busines
       })
       const data = await res.json()
       setHistory(data.history || [...history, { role: 'user', content: userMsg }, { role: 'assistant', content: data.reply }])
-      setMessages(m => [...m, { role: 'aria', text: data.reply || 'Sorry, something went wrong.' }])
+      const clean = (data.reply || 'Sorry, something went wrong.').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
+      setMessages(m => [...m, { role: 'aria', text: clean }])
     } catch {
       setMessages(m => [...m, { role: 'aria', text: 'Connection error. Please try again.' }])
     } finally {
