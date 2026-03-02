@@ -1,69 +1,45 @@
 // DigitalOcean Gradient API client
 const DO_TOKEN = process.env.DO_API_TOKEN!
 const BASE = 'https://api.digitalocean.com/v2/gen-ai'
-const CLAUDE_SONNET_UUID = 'f285d639-769e-11ef-bf8f-4e013e2ddde4' // Claude 3.5 Sonnet
 const EMBEDDING_MODEL_UUID = '22653204-79ed-11ef-bf8f-4e013e2ddde4' // GTE Large EN v1.5
 const REGION = process.env.DO_REGION || 'tor1'
+const PROJECT_ID = process.env.DO_PROJECT_ID!
 
 const headers = {
   Authorization: `Bearer ${DO_TOKEN}`,
   'Content-Type': 'application/json',
 }
 
-export async function createKnowledgeBase(name: string, urls: string[]) {
+export async function createKnowledgeBase(name: string, url: string) {
   const res = await fetch(`${BASE}/knowledge_bases`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
       name,
       region: REGION,
-      project_id: process.env.DO_PROJECT_ID,
+      project_id: PROJECT_ID,
       embedding_model_uuid: EMBEDDING_MODEL_UUID,
-      datasources: urls.map(url => ({
+      datasources: [{
         web_crawler_data_source: {
           base_url: url,
           crawling_option: 'DOMAIN',
           embed_media: false,
         },
-      })),
+      }],
     }),
   })
   return res.json()
 }
 
-export async function getKnowledgeBase(uuid: string) {
-  const res = await fetch(`${BASE}/knowledge_bases/${uuid}`, { headers })
-  return res.json()
-}
-
-export async function createAgent(name: string, knowledgeBaseUuid: string, systemPrompt: string) {
-  const res = await fetch(`${BASE}/agents`, {
+export async function queryKnowledgeBase(kbUuid: string, query: string): Promise<string> {
+  const res = await fetch(`${BASE}/knowledge_bases/${kbUuid}/query`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      name,
-      region: REGION,
-      model: { uuid: CLAUDE_SONNET_UUID },
-      instruction: systemPrompt,
-      knowledge_bases: [{ uuid: knowledgeBaseUuid }],
-    }),
+    body: JSON.stringify({ query, top_k: 5 }),
   })
-  return res.json()
-}
-
-export async function getAgent(uuid: string) {
-  const res = await fetch(`${BASE}/agents/${uuid}`, { headers })
-  return res.json()
-}
-
-export async function chatWithAgent(agentUuid: string, message: string, conversationUuid?: string) {
-  const body: any = { message }
-  if (conversationUuid) body.conversation_uuid = conversationUuid
-
-  const res = await fetch(`${BASE}/agents/${agentUuid}/chat`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  })
-  return res.json()
+  const data = await res.json()
+  // Extract text chunks from results
+  const chunks = data?.results || data?.matches || []
+  if (chunks.length === 0) return ''
+  return chunks.map((c: any) => c.content || c.text || c.chunk || '').filter(Boolean).join('\n\n')
 }

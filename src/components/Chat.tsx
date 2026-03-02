@@ -2,14 +2,15 @@
 import { useState, useRef, useEffect } from 'react'
 
 interface Message { role: 'user' | 'aria'; text: string }
+interface HistoryItem { role: string; content: string }
 
-export default function Chat({ agentUuid, businessName }: { agentUuid: string; businessName: string }) {
+export default function Chat({ kbUuid, businessName, systemPrompt }: { kbUuid: string; businessName: string; systemPrompt: string }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'aria', text: `Hi! I'm ARIA, the virtual receptionist for ${businessName}. How can I help you today?` }
   ])
+  const [history, setHistory] = useState<HistoryItem[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [convUuid, setConvUuid] = useState<string | undefined>()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
@@ -25,10 +26,10 @@ export default function Chat({ agentUuid, businessName }: { agentUuid: string; b
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentUuid, message: userMsg, conversationUuid: convUuid }),
+        body: JSON.stringify({ kbUuid, message: userMsg, history, businessName, systemPrompt }),
       })
       const data = await res.json()
-      if (data.conversationUuid) setConvUuid(data.conversationUuid)
+      setHistory(data.history || [...history, { role: 'user', content: userMsg }, { role: 'assistant', content: data.reply }])
       setMessages(m => [...m, { role: 'aria', text: data.reply || data.error || 'Sorry, something went wrong.' }])
     } catch {
       setMessages(m => [...m, { role: 'aria', text: 'Connection error. Please try again.' }])

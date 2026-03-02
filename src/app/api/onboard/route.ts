@@ -1,45 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createKnowledgeBase, createAgent } from '../../../lib/gradient'
+import { createKnowledgeBase } from '../../../lib/gradient'
 
 export async function POST(req: NextRequest) {
   const { url, businessName } = await req.json()
   if (!url || !businessName) return NextResponse.json({ error: 'Missing url or businessName' }, { status: 400 })
 
   try {
-    // 1. Create knowledge base from website URL
-    const kb = await createKnowledgeBase(`aria-${businessName.toLowerCase().replace(/\s+/g, '-')}`, [url])
+    const kbName = `aria-${businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40)}-${Date.now()}`
+    const kb = await createKnowledgeBase(kbName, url)
     const kbUuid = kb?.knowledge_base?.uuid
     if (!kbUuid) return NextResponse.json({ error: 'Failed to create knowledge base', detail: kb }, { status: 500 })
 
-    // 2. Build system prompt
-    const systemPrompt = `You are ARIA, the AI receptionist for ${businessName}. 
-You have been trained on ${businessName}'s website and know everything about their services, pricing, hours, and policies.
-
-Your role:
-- Answer customer questions warmly and accurately using only information from the knowledge base
-- Capture leads: always ask for name, phone or email when someone shows buying intent
-- Help customers book appointments or get quotes
-- Escalate genuine emergencies to a human immediately
-
-Rules:
-- Never make up pricing or promises not in the knowledge base
-- Stay on topic — you represent ${businessName} only
-- Be concise, friendly, and professional
-- If you don't know something, say so and offer to have someone follow up
-
-Always greet customers with: "Hi! I'm ARIA, the virtual receptionist for ${businessName}. How can I help you today?"`
-
-    // 3. Create agent
-    const agent = await createAgent(`aria-${businessName}`, kbUuid, systemPrompt)
-    const agentUuid = agent?.agent?.uuid
-    if (!agentUuid) return NextResponse.json({ error: 'Failed to create agent', detail: agent }, { status: 500 })
+    const systemPrompt = `You are ARIA, the AI receptionist for ${businessName}. You have been trained on ${businessName}'s website. Answer customer questions warmly and accurately. Capture leads by asking for name and contact info when someone shows buying intent. Never make up information not in the context provided.`
 
     return NextResponse.json({
       success: true,
       kbUuid,
-      agentUuid,
       businessName,
-      message: 'ARIA is being trained on your website. This takes 2-3 minutes.',
+      systemPrompt,
+      message: 'ARIA is being trained on your website. Ready in ~60 seconds.',
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

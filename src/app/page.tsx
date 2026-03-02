@@ -6,7 +6,8 @@ export default function Home() {
   const [step, setStep] = useState<'land' | 'onboarding' | 'ready'>('land')
   const [form, setForm] = useState({ url: '', businessName: '' })
   const [loading, setLoading] = useState(false)
-  const [agentUuid, setAgentUuid] = useState('')
+  const [kbUuid, setKbUuid] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState('')
   const [error, setError] = useState('')
 
   async function handleOnboard(e: React.FormEvent) {
@@ -22,7 +23,8 @@ export default function Home() {
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setAgentUuid(data.agentUuid)
+      setKbUuid(data.kbUuid)
+      setSystemPrompt(data.systemPrompt)
       await new Promise(r => setTimeout(r, 3000))
       setStep('ready')
     } catch (err: any) {
@@ -33,7 +35,7 @@ export default function Home() {
     }
   }
 
-  if (step === 'ready') return <Chat agentUuid={agentUuid} businessName={form.businessName} />
+  if (step === 'ready') return <Chat kbUuid={kbUuid} businessName={form.businessName} systemPrompt={systemPrompt} />
 
   const bars = [40,70,90,60,100,75,50,85,65]
 
