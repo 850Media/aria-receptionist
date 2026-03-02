@@ -30,6 +30,12 @@ export async function detachKBFromAgent(kbUuid: string) {
   await fetch(`${BASE}/agents/${AGENT_UUID}/knowledge_bases/${kbUuid}`, { method: 'DELETE', headers })
 }
 
+export async function getAgentKBs(): Promise<{ uuid: string }[]> {
+  const res = await fetch(`${BASE}/agents/${AGENT_UUID}`, { headers })
+  const data = await res.json()
+  return data?.agent?.knowledge_bases || []
+}
+
 export async function chatWithAgent(messages: { role: string; content: string }[]): Promise<string> {
   const res = await fetch(`${AGENT_URL}/api/v1/chat/completions`, {
     method: 'POST',
