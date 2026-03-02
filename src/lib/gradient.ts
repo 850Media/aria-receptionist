@@ -17,14 +17,13 @@ export async function createKnowledgeBase(name: string, urls: string[]) {
     body: JSON.stringify({
       name,
       region: REGION,
+      project_id: process.env.DO_PROJECT_ID,
       embedding_model_uuid: EMBEDDING_MODEL_UUID,
       datasources: urls.map(url => ({
-        name: `${name}-web`,
-        data_source_type: 'WEB_CRAWLER',
-        web_crawler_config: {
+        web_crawler_data_source: {
           base_url: url,
-          crawl_type: 'CRAWL_TYPE_SCOPED',
-          pages: 20,
+          crawling_option: 'DOMAIN',
+          embed_media: false,
         },
       })),
     }),
