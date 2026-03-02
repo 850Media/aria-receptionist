@@ -69,7 +69,7 @@ function OnboardContent() {
               onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))} style={s.input} /></div>
           <div><label style={s.label}>Website URL</label>
             <input type="url" required placeholder="https://yourbusiness.com" value={form.url}
-              onChange={e => setForm(f => ({ ...f, url: e.target.value }))} style={s.input} /></div>
+              onChange={e => { setForm(f => ({ ...f, url: e.target.value })); setError('') }} style={s.input} /></div>
           {error && <p style={{ color:'#ff6b6b', fontSize:14 }}>{error}</p>}
           <button type="submit" style={s.btn}>Train ARIA on My Website →</button>
         </form>
