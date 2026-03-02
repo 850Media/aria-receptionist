@@ -6,8 +6,7 @@ export default function Home() {
   const [step, setStep] = useState<'land' | 'onboarding' | 'ready'>('land')
   const [form, setForm] = useState({ url: '', businessName: '' })
   const [loading, setLoading] = useState(false)
-  const [kbUuid, setKbUuid] = useState('')
-  
+  const [agentInfo, setAgentInfo] = useState({ endpoint: '', apiKey: '', businessName: '' })
   const [error, setError] = useState('')
 
   async function handleOnboard(e: React.FormEvent) {
@@ -23,9 +22,7 @@ export default function Home() {
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
-      setKbUuid(data.kbUuid)
-      
-      await new Promise(r => setTimeout(r, 3000))
+      setAgentInfo({ endpoint: data.endpoint, apiKey: data.apiKey, businessName: data.businessName })
       setStep('ready')
     } catch (err: any) {
       setError(err.message)
@@ -35,7 +32,7 @@ export default function Home() {
     }
   }
 
-  if (step === 'ready') return <Chat kbUuid={kbUuid} businessName={form.businessName} />
+  if (step === 'ready') return <Chat {...agentInfo} />
 
   const bars = [40,70,90,60,100,75,50,85,65]
 
@@ -84,7 +81,7 @@ export default function Home() {
             ))}
           </div>
           <p style={{ color:'rgba(255,255,255,0.6)' }}>ARIA is learning <strong style={{ color:'#fff' }}>{form.businessName}</strong>...</p>
-          <p style={{ color:'rgba(255,255,255,0.3)', fontSize:14, marginTop:8 }}>Crawling website and building knowledge base</p>
+          <p style={{ color:'rgba(255,255,255,0.3)', fontSize:14, marginTop:8 }}>Building your dedicated AI agent</p>
         </div>
       )}
     </div>

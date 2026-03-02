@@ -1,11 +1,9 @@
 const DO_TOKEN = process.env.DO_API_TOKEN!
 const BASE = 'https://api.digitalocean.com/v2/gen-ai'
 const EMBEDDING_MODEL_UUID = '22653204-79ed-11ef-bf8f-4e013e2ddde4'
+const LLAMA_MODEL_UUID = 'd754f2d7-d1f0-11ef-bf8f-4e013e2ddde4'
 const REGION = process.env.DO_REGION || 'tor1'
 const PROJECT_ID = process.env.DO_PROJECT_ID!
-const AGENT_UUID = process.env.DO_AGENT_UUID!
-const AGENT_API_KEY = process.env.DO_AGENT_API_KEY!
-const AGENT_URL = process.env.DO_AGENT_URL!
 
 const headers = { Authorization: `Bearer ${DO_TOKEN}`, 'Content-Type': 'application/json' }
 
@@ -21,25 +19,44 @@ export async function createKnowledgeBase(name: string, url: string) {
   return res.json()
 }
 
-export async function attachKBToAgent(kbUuid: string) {
-  const res = await fetch(`${BASE}/agents/${AGENT_UUID}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
-  return res.json()
-}
-
-export async function detachKBFromAgent(kbUuid: string) {
-  await fetch(`${BASE}/agents/${AGENT_UUID}/knowledge_bases/${kbUuid}`, { method: 'DELETE', headers })
-}
-
-export async function getAgentKBs(): Promise<{ uuid: string }[]> {
-  const res = await fetch(`${BASE}/agents/${AGENT_UUID}`, { headers })
+export async function createAgent(name: string, kbUuid: string, businessName: string) {
+  // Create agent
+  const res = await fetch(`${BASE}/agents`, {
+    method: 'POST', headers,
+    body: JSON.stringify({
+      name,
+      model_uuid: LLAMA_MODEL_UUID,
+      instruction: `You are ARIA, the AI receptionist for ${businessName}. Answer customer questions warmly and accurately using only information from your knowledge base. Be concise and professional. Always ask for name and contact info when someone shows buying intent. If you don't know something, say so and offer to have someone follow up.`,
+      project_id: PROJECT_ID,
+      region: REGION,
+    }),
+  })
   const data = await res.json()
-  return data?.agent?.knowledge_bases || []
+  const agentUuid = data?.agent?.uuid
+  if (!agentUuid) throw new Error('Failed to create agent: ' + JSON.stringify(data))
+
+  // Attach KB
+  await fetch(`${BASE}/agents/${agentUuid}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
+
+  // Create API key
+  const keyRes = await fetch(`${BASE}/agents/${agentUuid}/api_keys`, {
+    method: 'POST', headers,
+    body: JSON.stringify({ name: 'aria-key' }),
+  })
+  const keyData = await keyRes.json()
+  const apiKey = keyData?.api_key_info?.secret_key
+
+  // Get agent endpoint
+  const agentData = data?.agent
+  const endpoint = agentData?.deployment?.url || ''
+
+  return { agentUuid, apiKey, endpoint }
 }
 
-export async function chatWithAgent(messages: { role: string; content: string }[]): Promise<string> {
-  const res = await fetch(`${AGENT_URL}/api/v1/chat/completions`, {
+export async function chatWithAgent(endpoint: string, apiKey: string, messages: { role: string; content: string }[]): Promise<string> {
+  const res = await fetch(`${endpoint}/api/v1/chat/completions`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${AGENT_API_KEY}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, stream: false }),
   })
   const data = await res.json()

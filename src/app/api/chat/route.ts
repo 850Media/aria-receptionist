@@ -2,21 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { chatWithAgent } from '../../../lib/gradient'
 
 export async function POST(req: NextRequest) {
-  const { message, history, businessName } = await req.json()
-  if (!message) return NextResponse.json({ error: 'Missing message' }, { status: 400 })
+  const { message, history, businessName, endpoint, apiKey } = await req.json()
+  if (!message || !endpoint || !apiKey) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
 
   try {
-    const systemMessage = {
-      role: 'system',
-      content: `You are ARIA, the AI receptionist for ${businessName}. Answer customer questions warmly and accurately using only information from your knowledge base. If you don't know something, say so and offer to have someone follow up. Always ask for name and contact info when someone shows buying intent.`
-    }
-
-    const messages = [systemMessage, ...(history || []), { role: 'user', content: message }]
-    const reply = await chatWithAgent(messages)
+    const messages = [
+      ...(history || []),
+      { role: 'user', content: message }
+    ]
+    const reply = await chatWithAgent(endpoint, apiKey, messages)
+    const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1')
 
     return NextResponse.json({
-      reply,
-      history: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }],
+      reply: clean,
+      history: [...messages, { role: 'assistant', content: clean }],
     })
   } catch (err: any) {
     console.error('Chat error:', err.message)
