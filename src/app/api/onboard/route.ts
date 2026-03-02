@@ -13,8 +13,13 @@ export async function POST(req: NextRequest) {
     const slug = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30)
     const ts = Date.now()
 
-    // 1. Create dedicated KB
-    const kb = await createKnowledgeBase(`aria-kb-${slug}-${ts}`, url)
+    // 1. Create dedicated KB (try https first, then http fallback)
+    let kbUrl = url
+    let kb = await createKnowledgeBase(`aria-kb-${slug}-${ts}`, kbUrl)
+    if (!kb?.knowledge_base?.uuid && url.startsWith('https://')) {
+      kbUrl = url.replace('https://', 'http://')
+      kb = await createKnowledgeBase(`aria-kb-${slug}-${ts}-2`, kbUrl)
+    }
     const kbUuid = kb?.knowledge_base?.uuid
     if (!kbUuid) return NextResponse.json({ error: 'Failed to create knowledge base', detail: kb }, { status: 500 })
 

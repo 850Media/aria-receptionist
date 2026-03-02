@@ -9,9 +9,13 @@ export async function crawlWebsite(url: string, maxPages = 5): Promise<string> {
     visited.add(pageUrl)
 
     try {
+      const https = await import('https')
+      const agent = new https.Agent({ rejectUnauthorized: false })
       const res = await fetch(pageUrl, {
         headers: { 'User-Agent': 'ARIA-AI-Receptionist/1.0' },
         signal: AbortSignal.timeout(8000),
+        // @ts-ignore
+        agent: pageUrl.startsWith('https') ? agent : undefined,
       })
       if (!res.ok) return
       const html = await res.text()
