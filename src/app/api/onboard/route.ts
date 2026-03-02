@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createKnowledgeBase, createAgent } from '../../../lib/gradient'
-import { saveSession } from '../../../lib/store'
+import { saveAgent, initDB } from '../../../lib/db'
 import { randomBytes } from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -8,6 +8,8 @@ export async function POST(req: NextRequest) {
   if (!url || !businessName) return NextResponse.json({ error: 'Missing url or businessName' }, { status: 400 })
 
   try {
+    await initDB()
+
     const slug = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 30)
     const ts = Date.now()
 
@@ -16,12 +18,12 @@ export async function POST(req: NextRequest) {
     const kbUuid = kb?.knowledge_base?.uuid
     if (!kbUuid) return NextResponse.json({ error: 'Failed to create knowledge base', detail: kb }, { status: 500 })
 
-    // 2. Create dedicated agent with KB attached
+    // 2. Create dedicated agent
     const { agentUuid, apiKey, endpoint } = await createAgent(`aria-${slug}-${ts}`, kbUuid, businessName)
 
-    // 3. Generate shareable ID
+    // 3. Persist to DB
     const chatId = randomBytes(8).toString('hex')
-    saveSession(chatId, { businessName, endpoint, apiKey, kbUuid, createdAt: ts })
+    await saveAgent({ chatId, businessName, url, agentUuid, kbUuid, endpoint, apiKey })
 
     const appUrl = process.env.APP_URL || 'https://aria-receptionist-n5zcp.ondigitalocean.app'
     const chatUrl = `${appUrl}/chat/${chatId}`

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '../../../../lib/store'
+import { getAgent, initDB } from '../../../../lib/db'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = getSession(params.id)
-  if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
-  return NextResponse.json({ businessName: session.businessName, endpoint: session.endpoint, apiKey: session.apiKey })
+  await initDB()
+  const agent = await getAgent(params.id)
+  if (!agent) return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+  return NextResponse.json({
+    businessName: agent.business_name,
+    endpoint: agent.endpoint,
+    apiKey: agent.api_key,
+  })
 }
