@@ -1,5 +1,3 @@
-import { crawlWebsite } from './crawler'
-
 const DO_TOKEN = process.env.DO_API_TOKEN!
 const BASE = 'https://api.digitalocean.com/v2/gen-ai'
 const EMBEDDING_MODEL_UUID = '22653204-79ed-11ef-bf8f-4e013e2ddde4'
@@ -21,18 +19,9 @@ export async function createKnowledgeBase(name: string, url: string) {
   return res.json()
 }
 
-export async function createAgent(name: string, kbUuid: string | null, businessName: string, url: string) {
-  // Crawl website for context (works even when KB fails)
-  let websiteContext = ''
-  try {
-    websiteContext = await crawlWebsite(url, 3)
-  } catch {}
+export async function createAgent(name: string, kbUuid: string, businessName: string) {
+  const instruction = `You are ARIA, the AI receptionist for ${businessName}. Answer customer questions warmly and accurately using only information from your knowledge base. Be concise and professional. Always ask for name and contact info when someone shows buying intent. If you don't know something, say so and offer to have someone follow up.`
 
-  const instruction = websiteContext
-    ? `You are ARIA, the AI receptionist for ${businessName}. Use this website content to answer questions:\n\n${websiteContext.slice(0, 6000)}\n\nBe warm, concise, professional. Ask for name and contact info when someone shows buying intent.`
-    : `You are ARIA, the AI receptionist for ${businessName}. Be warm, concise, and professional. Ask for name and contact info when someone shows buying intent.`
-
-  // Create agent
   const res = await fetch(`${BASE}/agents`, {
     method: 'POST', headers,
     body: JSON.stringify({
@@ -47,10 +36,8 @@ export async function createAgent(name: string, kbUuid: string | null, businessN
   const agentUuid = data?.agent?.uuid
   if (!agentUuid) throw new Error('Failed to create agent: ' + JSON.stringify(data))
 
-  // Attach KB if we have one
-  if (kbUuid) {
-    await fetch(`${BASE}/agents/${agentUuid}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
-  }
+  // Attach KB
+  await fetch(`${BASE}/agents/${agentUuid}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
 
   // Create API key
   const keyRes = await fetch(`${BASE}/agents/${agentUuid}/api_keys`, {
