@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 interface Message { role: 'user' | 'aria'; text: string }
 interface HistoryItem { role: string; content: string }
 
-export default function Chat({ kbUuid, businessName, systemPrompt }: { kbUuid: string; businessName: string; systemPrompt: string }) {
+export default function Chat({ kbUuid, businessName }: { kbUuid: string; businessName: string }) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'aria', text: `Hi! I'm ARIA, the virtual receptionist for ${businessName}. How can I help you today?` }
   ])
@@ -26,11 +26,11 @@ export default function Chat({ kbUuid, businessName, systemPrompt }: { kbUuid: s
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kbUuid, message: userMsg, history, businessName, systemPrompt }),
+        body: JSON.stringify({ message: userMsg, history, businessName }),
       })
       const data = await res.json()
       setHistory(data.history || [...history, { role: 'user', content: userMsg }, { role: 'assistant', content: data.reply }])
-      setMessages(m => [...m, { role: 'aria', text: data.reply || data.error || 'Sorry, something went wrong.' }])
+      setMessages(m => [...m, { role: 'aria', text: data.reply || 'Sorry, something went wrong.' }])
     } catch {
       setMessages(m => [...m, { role: 'aria', text: 'Connection error. Please try again.' }])
     } finally {
@@ -51,18 +51,10 @@ export default function Chat({ kbUuid, businessName, systemPrompt }: { kbUuid: s
           <span style={{ fontSize:12, color:'rgba(255,255,255,0.3)' }}>Online</span>
         </div>
       </div>
-
       <div style={{ flex:1, overflowY:'auto', padding:'24px', display:'flex', flexDirection:'column', gap:16, maxWidth:640, width:'100%', margin:'0 auto' }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display:'flex', justifyContent: m.role==='user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{
-              maxWidth:'75%', borderRadius:16, padding:'12px 16px', fontSize:14, lineHeight:1.6,
-              borderBottomRightRadius: m.role==='user' ? 4 : 16,
-              borderBottomLeftRadius: m.role==='aria' ? 4 : 16,
-              background: m.role==='user' ? 'linear-gradient(135deg,#6c63ff,#4f46e5)' : 'rgba(255,255,255,0.05)',
-              border: m.role==='aria' ? '1px solid rgba(255,255,255,0.08)' : 'none',
-              color: m.role==='user' ? '#fff' : 'rgba(255,255,255,0.8)',
-            }}>
+            <div style={{ maxWidth:'75%', borderRadius:16, padding:'12px 16px', fontSize:14, lineHeight:1.6, borderBottomRightRadius: m.role==='user' ? 4 : 16, borderBottomLeftRadius: m.role==='aria' ? 4 : 16, background: m.role==='user' ? 'linear-gradient(135deg,#6c63ff,#4f46e5)' : 'rgba(255,255,255,0.05)', border: m.role==='aria' ? '1px solid rgba(255,255,255,0.08)' : 'none', color: m.role==='user' ? '#fff' : 'rgba(255,255,255,0.8)' }}>
               {m.text}
             </div>
           </div>
@@ -76,7 +68,6 @@ export default function Chat({ kbUuid, businessName, systemPrompt }: { kbUuid: s
         )}
         <div ref={bottomRef} />
       </div>
-
       <div style={{ borderTop:'1px solid rgba(255,255,255,0.06)', padding:'16px 24px' }}>
         <form onSubmit={send} style={{ maxWidth:640, margin:'0 auto', display:'flex', gap:12 }}>
           <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="Ask ARIA anything..."

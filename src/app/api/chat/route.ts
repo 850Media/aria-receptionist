@@ -1,41 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { chatWithAgent } from '../../../lib/gradient'
 
 export async function POST(req: NextRequest) {
-  const { message, history, businessName, systemPrompt } = await req.json()
-  if (!message || !systemPrompt) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  const { message, history, businessName } = await req.json()
+  if (!message) return NextResponse.json({ error: 'Missing message' }, { status: 400 })
 
   try {
-    const messages = [
-      ...(history || []),
-      { role: 'user', content: message }
-    ]
+    const systemMessage = {
+      role: 'system',
+      content: `You are ARIA, the AI receptionist for ${businessName}. Answer customer questions warmly and accurately using only information from your knowledge base. If you don't know something, say so and offer to have someone follow up. Always ask for name and contact info when someone shows buying intent.`
+    }
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages,
-      }),
-    })
-
-    const data = await res.json()
-    if (!res.ok) throw new Error(data?.error?.message || `Anthropic error ${res.status}`)
-
-    const reply = data?.content?.[0]?.text || 'Sorry, I had trouble with that.'
+    const messages = [systemMessage, ...(history || []), { role: 'user', content: message }]
+    const reply = await chatWithAgent(messages)
 
     return NextResponse.json({
       reply,
-      history: [...messages, { role: 'assistant', content: reply }],
+      history: [...(history || []), { role: 'user', content: message }, { role: 'assistant', content: reply }],
     })
   } catch (err: any) {
     console.error('Chat error:', err.message)
-    return NextResponse.json({ error: err.message, reply: `I'm having trouble right now. Please try again in a moment.` }, { status: 500 })
+    return NextResponse.json({ error: err.message, reply: "I'm having trouble right now. Please try again." }, { status: 500 })
   }
 }

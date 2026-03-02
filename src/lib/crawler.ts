@@ -32,7 +32,11 @@ export async function crawlWebsite(url: string, maxPages = 5): Promise<string> {
 
       // Find internal links for crawling
       if (visited.size < maxPages) {
-        const links = [...html.matchAll(/href=["']([^"']+)["']/g)]
+        const linkRegex = /href=["']([^"']+)["']/g
+        const linkMatches: string[] = []
+        let linkMatch: RegExpExecArray | null
+        while ((linkMatch = linkRegex.exec(html)) !== null) { linkMatches.push(linkMatch[1]) }
+        const links = linkMatches
           .map(m => m[1])
           .filter(href => {
             if (href.startsWith('http')) {

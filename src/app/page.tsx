@@ -7,7 +7,7 @@ export default function Home() {
   const [form, setForm] = useState({ url: '', businessName: '' })
   const [loading, setLoading] = useState(false)
   const [kbUuid, setKbUuid] = useState('')
-  const [systemPrompt, setSystemPrompt] = useState('')
+  
   const [error, setError] = useState('')
 
   async function handleOnboard(e: React.FormEvent) {
@@ -24,7 +24,7 @@ export default function Home() {
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setKbUuid(data.kbUuid)
-      setSystemPrompt(data.systemPrompt)
+      
       await new Promise(r => setTimeout(r, 3000))
       setStep('ready')
     } catch (err: any) {
@@ -35,7 +35,7 @@ export default function Home() {
     }
   }
 
-  if (step === 'ready') return <Chat kbUuid={kbUuid} businessName={form.businessName} systemPrompt={systemPrompt} />
+  if (step === 'ready') return <Chat kbUuid={kbUuid} businessName={form.businessName} />
 
   const bars = [40,70,90,60,100,75,50,85,65]
 
