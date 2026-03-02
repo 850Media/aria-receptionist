@@ -1,3 +1,5 @@
+import { crawlWebsite } from './crawler'
+
 const DO_TOKEN = process.env.DO_API_TOKEN!
 const BASE = 'https://api.digitalocean.com/v2/gen-ai'
 const EMBEDDING_MODEL_UUID = '22653204-79ed-11ef-bf8f-4e013e2ddde4'
@@ -19,14 +21,24 @@ export async function createKnowledgeBase(name: string, url: string) {
   return res.json()
 }
 
-export async function createAgent(name: string, kbUuid: string, businessName: string) {
+export async function createAgent(name: string, kbUuid: string | null, businessName: string, url: string) {
+  // Crawl website for context (works even when KB fails)
+  let websiteContext = ''
+  try {
+    websiteContext = await crawlWebsite(url, 3)
+  } catch {}
+
+  const instruction = websiteContext
+    ? `You are ARIA, the AI receptionist for ${businessName}. Use this website content to answer questions:\n\n${websiteContext.slice(0, 6000)}\n\nBe warm, concise, professional. Ask for name and contact info when someone shows buying intent.`
+    : `You are ARIA, the AI receptionist for ${businessName}. Be warm, concise, and professional. Ask for name and contact info when someone shows buying intent.`
+
   // Create agent
   const res = await fetch(`${BASE}/agents`, {
     method: 'POST', headers,
     body: JSON.stringify({
       name,
       model_uuid: LLAMA_MODEL_UUID,
-      instruction: `You are ARIA, the AI receptionist for ${businessName}. Answer customer questions warmly and accurately using only information from your knowledge base. Be concise and professional. Always ask for name and contact info when someone shows buying intent. If you don't know something, say so and offer to have someone follow up.`,
+      instruction,
       project_id: PROJECT_ID,
       region: REGION,
     }),
@@ -35,8 +47,10 @@ export async function createAgent(name: string, kbUuid: string, businessName: st
   const agentUuid = data?.agent?.uuid
   if (!agentUuid) throw new Error('Failed to create agent: ' + JSON.stringify(data))
 
-  // Attach KB
-  await fetch(`${BASE}/agents/${agentUuid}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
+  // Attach KB if we have one
+  if (kbUuid) {
+    await fetch(`${BASE}/agents/${agentUuid}/knowledge_bases/${kbUuid}`, { method: 'POST', headers })
+  }
 
   // Create API key
   const keyRes = await fetch(`${BASE}/agents/${agentUuid}/api_keys`, {
@@ -45,10 +59,7 @@ export async function createAgent(name: string, kbUuid: string, businessName: st
   })
   const keyData = await keyRes.json()
   const apiKey = keyData?.api_key_info?.secret_key
-
-  // Get agent endpoint
-  const agentData = data?.agent
-  const endpoint = agentData?.deployment?.url || ''
+  const endpoint = data?.agent?.deployment?.url || ''
 
   return { agentUuid, apiKey, endpoint }
 }
